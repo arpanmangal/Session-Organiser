@@ -37,7 +37,7 @@ class SessionOrganizer
     int totalPapers;
 
     double neighbourRowSelectionProb;
-    double numberNeighbours;
+    int numberNeighbours;
     double neighbourGeoProb;
 
     Conference *conference;
@@ -73,13 +73,14 @@ class SessionOrganizer
     /**
      * Do the local search on this state
      */
-    void localSearch ();
+    // void localSearch ();
 
 
   public:
     SessionOrganizer();
     SessionOrganizer(string filename);
     void initializeConference();
+    void localSearch ();
 
     /**
      * Read in the number of parallel tracks, papers in session, sessions

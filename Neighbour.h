@@ -43,6 +43,8 @@ class Neighbour
 	
 	int getExSize ();
 	double getGoodInc ();
+
+	void printNeighbour ();
 };
 
 #endif /* NEIGHBOUR_H */

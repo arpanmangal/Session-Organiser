@@ -40,3 +40,7 @@ int Neighbour::getExSize () {
 double Neighbour::getGoodInc () {
     return goodnessIncrement;
 }
+
+void Neighbour::printNeighbour () {
+    cout << timeSlotA << "," << trackA << " | " << timeSlotB << "," << trackB << " | " << exchangeSize << " | " << goodnessIncrement << endl;
+}
