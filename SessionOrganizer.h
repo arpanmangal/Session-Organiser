@@ -5,20 +5,19 @@
  */
 
 #ifndef SESSIONORGANIZER_H
-#define	SESSIONORGANIZER_H
+#define SESSIONORGANIZER_H
 
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <vector>
 
-
 #include "Conference.h"
 #include "Track.h"
 #include "Session.h"
+#include "Neighbour.h"
 
 using namespace std;
-
 
 /**
  * SessionOrganizer reads in a similarity matrix of papers, and organizes them
@@ -27,25 +26,50 @@ using namespace std;
  * @author Kapil Thakkar
  *
  */
-class SessionOrganizer {
-private:
-    double ** distanceMatrix;
+class SessionOrganizer
+{
+  private:
+    double **distanceMatrix;
 
-    int parallelTracks ;
-    int papersInSession ;
-    int sessionsInTrack ;
+    int parallelTracks;  // p
+    int papersInSession; // k
+    int sessionsInTrack; // t
 
     Conference *conference;
 
-    double processingTimeInMinutes ;
-    double tradeoffCoefficient ; // the tradeoff coefficient
+    double processingTimeInMinutes;
+    double tradeoffCoefficient; // the tradeoff coefficient
 
+    /**
+     * Initialize the conference according to the sorting rule 
+     */
+    void initializeConference();
 
-public:
+    /** 
+     * Get the neighbours of this state
+     */
+    vector<Neighbour> getNeighbours ();
+
+    /**
+     * Make and return a neighbour with given parameters
+     */
+    Neighbour getNeighbour (bool neighbourType, int trkA, int trkB, int timeA, int timeB, int exSize);
+
+    /**
+     * Change to go the specified neighbour
+     */
+    void gotoNeighbour (Neighbour ngh);
+
+    /**
+     * Do the local search on this state
+     */
+    void localSearch ();
+    
+
+  public:
     SessionOrganizer();
     SessionOrganizer(string filename);
-    
-    
+
     /**
      * Read in the number of parallel tracks, papers in session, sessions
      * in a track, and the similarity matrix from the specified filename.
@@ -53,31 +77,25 @@ public:
      * @return the similarity matrix.
      */
     void readInInputFile(string filename);
-    
-    
-    
+
     /**
      * Organize the papers according to some algorithm.
      */
     void organizePapers();
-    
-    
+
     /**
      * Get the distance matrix.
      * @return the distance matrix.
      */
-    double** getDistanceMatrix();
-    
-    
+    double **getDistanceMatrix();
+
     /**
      * Score the organization.
      * @return the score.
      */
     double scoreOrganization();
-    
-    
+
     void printSessionOrganiser(char *);
 };
 
-#endif	/* SESSIONORGANIZER_H */
-
+#endif /* SESSIONORGANIZER_H */

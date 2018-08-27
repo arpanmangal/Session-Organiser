@@ -20,13 +20,14 @@ private:
     Track *tracks;
 
     // The number of parallel tracks.
-    int parallelTracks;
-
-    // The number of sessions in a track.
-    int sessionsInTrack;
+    int parallelTracks; // p
 
     // The number of papers in a session.
-    int papersInSession;
+    int papersInSession; // k
+    
+    // The number of sessions in a track.
+    int sessionsInTrack; // t
+
 public:
     Conference();
     
