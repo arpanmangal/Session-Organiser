@@ -36,6 +36,10 @@ class SessionOrganizer
     int sessionsInTrack; // t
     int totalPapers;
 
+    double neighbourRowSelectionProb;
+    double numberNeighbours;
+    double neighbourGeoProb;
+
     Conference *conference;
 
     double processingTimeInMinutes;
@@ -56,6 +60,11 @@ class SessionOrganizer
      */
     Neighbour getNeighbour (bool neighbourType, int trkA, int trkB, int timeA, int timeB, int exSize);
 
+    /**
+     * Get the change in goodness w.r.t. A, when swapping exSize elements with B
+     */
+    double sessionExchangeGoodness(int trkA, int trkB, int timeA, int timeB, int exSize);
+    
     /**
      * Change to go the specified neighbour
      */

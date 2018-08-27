@@ -29,7 +29,7 @@ class Neighbour
 	 * and the two swaping indices. Also provide the exchange size and 
 	 * goodness increment.
 	 */
-	Neighbour (bool neighbourType, int typeIndex, int swapIdx1, int swapIdx2, int exSize, double goodInc);
+	Neighbour (bool neighbourType, int trkA, int trkB, int timeA, int timeB, int exSize, double goodInc);
 
 	/**
 	 * Getter functions

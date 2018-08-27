@@ -7,6 +7,7 @@
 #include "SessionOrganizer.h"
 #include "Util.h"
 #include <algorithm>
+#include <math.h>
 
 SessionOrganizer::SessionOrganizer()
 {
@@ -21,6 +22,11 @@ SessionOrganizer::SessionOrganizer(string filename)
 {
     readInInputFile(filename);
     conference = new Conference(parallelTracks, sessionsInTrack, papersInSession);
+
+    // Initialising various probabilities
+    neighbourRowSelectionProb = 0.7;
+    numberNeighbours = 10;
+    neighbourGeoProb = 1 / sqrt(papersInSession);
 }
 
 void SessionOrganizer::organizePapers()
@@ -198,16 +204,160 @@ void SessionOrganizer::initializeConference()
 
 vector<Neighbour> SessionOrganizer::getNeighbours()
 {
+    srand(time(NULL));
+    bool rowNeigh = (double(rand()) / ((RAND_MAX + 1u)) < neighbourRowSelectionProb) ? true : false;
+
+    if (rowNeigh)
+    {
+        // Select neighbours from a random row
+        int row = rand() / ((RAND_MAX + 1u) / sessionsInTrack);
+
+        // Generate `numNeighbours` neighbours
+        vector<Neighbour> neighbours;
+        for (int nh = 0; nh < numberNeighbours; nh++)
+        {
+            // choose two track numbers at random
+            int trackA = rand() / ((RAND_MAX + 1u) / parallelTracks);
+            int trackB = rand() / ((RAND_MAX + 1u) / parallelTracks);
+
+            // choose the exchange size with geometric distribution
+            int exSize = 1;
+            while (exSize < papersInSession)
+            {
+                // toss a coin
+                bool shouldStop = (double(rand()) / ((RAND_MAX + 1u)) < neighbourGeoProb) ? false : true;
+                if (shouldStop)
+                {
+                    // got a tails
+                    break;
+                }
+                else
+                {
+                    // got heads
+                    exSize++;
+                }
+            }
+
+            // create a neighbour with the obtained parameters
+            Neighbour ngbour = getNeighbour(true, trackA, trackB, row, row, exSize);
+
+            neighbours.push_back(ngbour);
+        }
+
+        return neighbours;
+    }
+    else
+    {
+        // Select neighbours from a random column
+        int col = rand() / ((RAND_MAX + 1u) / parallelTracks);
+
+        // Generate `numNeighbours` neighbours
+        vector<Neighbour> neighbours;
+        for (int nh = 0; nh < numberNeighbours; nh++)
+        {
+            // choose two time slots at random
+            int timeA = rand() / ((RAND_MAX + 1u) / sessionsInTrack);
+            int timeB = rand() / ((RAND_MAX + 1u) / sessionsInTrack);
+
+            // choose the exchange size with geometric distribution
+            int exSize = 1;
+            while (exSize < papersInSession)
+            {
+                // toss a coin
+                bool shouldStop = (double(rand()) / ((RAND_MAX + 1u)) < neighbourGeoProb) ? false : true;
+                if (shouldStop)
+                {
+                    // got a tails
+                    break;
+                }
+                else
+                {
+                    // got heads
+                    exSize++;
+                }
+            }
+
+            // create a neighbour with the obtained parameters
+            Neighbour ngbour = getNeighbour(true, col, col, timeA, timeB, exSize);
+
+            neighbours.push_back(ngbour);
+        }
+
+        return neighbours;
+    }
 }
 
 Neighbour SessionOrganizer::getNeighbour(bool neighbourType, int trkA, int trkB, int timeA, int timeB, int exSize)
 {
+    // Compute the goodness increment of the neighbour, and return a neighbour object
+    double goodnessChange = 0;
+    goodnessChange += sessionExchangeGoodness (trkA, trkB, timeA, timeB, exSize);
+    goodnessChange += sessionExchangeGoodness (trkB, trkA, timeB, timeA, exSize);
+
+    // make and return a new neighbour
+    Neighbour ng(neighbourType, trkA, trkB, timeA, timeB, exSize, goodnessChange);
+    return ng;
+}
+
+double SessionOrganizer::sessionExchangeGoodness(int trkA, int trkB, int timeA, int timeB, int exSize)
+{
+    double delta = 0;
+    int paperA, paperB;
+    for (int p = 0; p < exSize; p++)
+    {
+        paperA = conference->getPaper(trkA, timeA, p);
+
+        // add the goodness change due to leaving papers of same sessions
+        for (int j = exSize; j < papersInSession; j++)
+        {
+            paperB = conference->getPaper(trkA, timeA, j);
+            delta += (tradeoffCoefficient + 1) * distanceMatrix[paperA][paperB] - 1; 
+        }
+
+        // add goodness change due to embracing papers of different sessions
+        for (int j = exSize; j < papersInSession; j++)
+        {
+            paperB = conference->getPaper(trkB, timeB, j);
+            delta -= (tradeoffCoefficient + 1) * distanceMatrix[paperA][paperB] - 1; 
+        }
+    }
+
+    // return the change
+    return delta;
 }
 
 void SessionOrganizer::gotoNeighbour(Neighbour ngh)
 {
+    // Convert the current conference state to that represented by the given neighbour
+    int exSize = ngh.getExSize ();
+    for (int p = 0; p < exSize; p++) {
+        // Exchange the pth paper in sessions A and B
+        int paperA = conference->getPaper(ngh.getTrackA(), ngh.getTimeA(), p);
+        int paperB = conference->getPaper(ngh.getTrackB(), ngh.getTimeB(), p);
+
+        conference->setPaper(ngh.getTrackA(), ngh.getTimeA(), p, paperB);
+        conference->setPaper(ngh.getTrackB(), ngh.getTimeB(), p, paperA);
+    }
 }
 
 void SessionOrganizer::localSearch()
 {
+    int iter = 10;
+    while (iter--) {
+        vector<Neighbour> neighbours = getNeighbours ();
+        int max_nh_idx = 0;
+        for (int nh = 1; nh < neighbours.size(); nh++) {
+            if (neighbours.at(nh).getGoodInc() > neighbours.at(max_nh_idx).getGoodInc()) {
+                max_nh_idx = nh;
+            }
+        }
+
+        if (neighbours.at(max_nh_idx).getGoodInc() <= 0) {
+            // on an local optima
+            break;
+        } else {
+            // goto neighbour
+            gotoNeighbour (neighbours.at(max_nh_idx));
+        }
+    }
 }

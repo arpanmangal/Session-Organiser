@@ -24,7 +24,7 @@ private:
 
     // The number of papers in a session.
     int papersInSession; // k
-    
+
     // The number of sessions in a track.
     int sessionsInTrack; // t
 
@@ -88,7 +88,11 @@ public:
      */
     void setPaper(int trackIndex, int sessionIndex, int paperIndex, int paperId);
     
-    
+    /**
+     * Get the paper from the specifies slot
+     */
+    int getPaper (int trackIndex, int sessionIndex, int paperIndex);
+
     void printConference(char *);
 };
 
