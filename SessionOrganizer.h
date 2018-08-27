@@ -16,6 +16,7 @@
 #include "Track.h"
 #include "Session.h"
 #include "Neighbour.h"
+#include "Neighboursingle.h"
 
 using namespace std;
 
@@ -54,23 +55,26 @@ class SessionOrganizer
      * Get the neighbours of this state
      */
     vector<Neighbour> getNeighbours ();
-    // vector<Neighbour> getNeighbours_nc2 ();
+    vector<Neighboursingle> getNeighbours_nc2 ();
 
     /**
      * Make and return a neighbour with given parameters
      */
     Neighbour getNeighbour (bool neighbourType, int trkA, int trkB, int timeA, int timeB, int exSize);
-    // Neighbour getNeighbour_nc2 ();
+    Neighboursingle getNeighbour_nc2 (int trkA, int trkB, int timeA, int timeB, int paperIdxA, int paperIdxB);
 
     /**
      * Get the change in goodness w.r.t. A, when swapping exSize elements with B
      */
     double sessionExchangeGoodness(int trkA, int trkB, int timeA, int timeB, int exSize);
+    double sessionExchangeGoodness_nc2(int trkA, int trkB, int timeA, int timeB, int paperIdxA, int paperIdxB);
     // double timeSessionExchangeGoodness (int )
     /**
      * Change to go the specified neighbour
      */
     void gotoNeighbour (Neighbour ngh);
+    void gotoNeighbour_nc2 (Neighboursingle ngh);
+
 
     /**
      * Do the local search on this state
@@ -83,6 +87,7 @@ class SessionOrganizer
     SessionOrganizer(string filename);
     void initializeConference();
     void localSearch ();
+    void localSearch_nc2();
 
     /**
      * Read in the number of parallel tracks, papers in session, sessions

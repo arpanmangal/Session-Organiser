@@ -470,3 +470,203 @@ void SessionOrganizer::localSearch()
     }
     cout << "Took " << iter << " steps" << endl;
 }
+
+vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2()
+{
+    vector<Neighboursingle> neighbours;
+    // Iterate over all pairs of sessions, and pick all pairs of papers
+    for (int trackA = 0; trackA < parallelTracks; trackA++)
+    {
+        for (int timeA = 0; timeA < sessionsInTrack; timeA++)
+        {
+            for (int trackB = 0; trackB < parallelTracks; trackB++)
+            {
+                for (int timeB = 0; timeB < sessionsInTrack; timeB++)
+                {
+                    if (trackA == trackB && timeA == timeB)
+                        continue;
+
+                    // pick all pairs of papers
+                    for (int paperA = 0; paperA < papersInSession; paperA++)
+                    {
+                        for (int paperB = 0; paperB < papersInSession; paperB++)
+                        {
+                            neighbours.push_back(getNeighbour_nc2(trackA, trackB, timeA, timeB, paperA, paperB));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return neighbours;
+}
+
+Neighboursingle SessionOrganizer::getNeighbour_nc2(int trkA, int trkB, int timeA, int timeB, int paperIdxA, int paperIdxB)
+{
+    // compute the incremental goodness
+    double goodnessChange = 0;
+    goodnessChange += sessionExchangeGoodness_nc2(trkA, trkB, timeA, timeB, paperIdxA, paperIdxB);
+    goodnessChange += sessionExchangeGoodness_nc2(trkB, trkA, timeB, timeA, paperIdxB, paperIdxA);
+
+    // make and return a new neighbour
+    Neighboursingle ng(trkA, trkB, timeA, timeB, paperIdxA, paperIdxB, goodnessChange);
+    return ng;
+}
+
+double SessionOrganizer::sessionExchangeGoodness_nc2(int trkA, int trkB, int timeA, int timeB, int paperIdxA, int paperIdxB)
+{
+    double delta = 0;
+    int paperA, paperB;
+    paperA = conference->getPaper(trkA, timeA, paperIdxA);
+    if (timeA == timeB)
+    {
+        // process session B
+        for (int p = 0; p < papersInSession; p++)
+        {
+            if (p == paperIdxB)
+                continue;
+
+            paperB = conference->getPaper(trkB, timeB, p);
+
+            // add similarity
+            delta += 1 - distanceMatrix[paperA][paperIdxA];
+
+            // subtract difference
+            delta -= tradeoffCoefficient * distanceMatrix[paperA][paperB];
+        }
+
+        // process session A
+        for (int p = 0; p < papersInSession; p++)
+        {
+            if (p == paperIdxA)
+                continue;
+
+            paperB = conference->getPaper(trkA, timeA, p);
+
+            // subtract similarity
+            delta -= 1 - distanceMatrix[paperA][paperB];
+
+            // add difference
+            delta += tradeoffCoefficient * distanceMatrix[paperA][paperB];
+        }
+    }
+    else
+    {
+        // both in different time slots
+
+        // Process timeB
+        for (int track = 0; track < parallelTracks; track++)
+        {
+            if (track == trkB)
+            {
+                for (int p = 0; p < papersInSession; p++)
+                {
+                    if (p == paperIdxB)
+                        continue;
+                    // add similarity
+                    paperB = conference->getPaper(track, timeB, p);
+                    delta += 1 - distanceMatrix[paperA][paperB];
+                }
+            }
+            else
+            {
+                for (int p = 0; p < papersInSession; p++)
+                {
+                    // add distance
+                    paperB = conference->getPaper(track, timeB, p);
+                    delta += tradeoffCoefficient * distanceMatrix[paperA][paperB];
+                }
+            }
+        }
+
+        // Process timeA
+        for (int track = 0; track < parallelTracks; track++)
+        {
+            if (track == trkA)
+            {
+                for (int p = 0; p < papersInSession; p++)
+                {
+                    if (p == paperIdxA)
+                        continue;
+                    // subtract similarity
+                    paperB = conference->getPaper(track, timeA, p);
+                    delta -= 1 - distanceMatrix[paperA][paperB];
+                }
+            }
+            else
+            {
+                for (int p = 0; p < papersInSession; p++)
+                {
+                    // subtract distance
+                    paperB = conference->getPaper(track, timeA, p);
+                    delta -= tradeoffCoefficient * distanceMatrix[paperA][paperB];
+                }
+            }
+        }
+    }
+
+    return delta;
+}
+
+void SessionOrganizer::gotoNeighbour_nc2(Neighboursingle ngh)
+{
+        // Convert the current conference state to that represented by the given neighbour
+        int paperA = conference->getPaper(ngh.getTrackA(), ngh.getTimeA(), ngh.getPaperIdxA());
+        int paperB = conference->getPaper(ngh.getTrackB(), ngh.getTimeB(), ngh.getPaperIdxB());
+
+        conference->setPaper(ngh.getTrackA(), ngh.getTimeA(), ngh.getPaperIdxA(), paperB);
+        conference->setPaper(ngh.getTrackB(), ngh.getTimeB(), ngh.getPaperIdxB(), paperA);
+}
+
+void SessionOrganizer::localSearch_nc2()
+{
+    int iter = 0;
+    double score = scoreOrganization();
+    cout << "score:" << score << endl;
+
+    int start_time = time(NULL);
+
+    while (iter++ < 200)
+    {
+        vector<Neighboursingle> neighbours = getNeighbours_nc2();
+        // cout << iter << " " << neighbours.size() << endl;
+        if (neighbours.size() < 1)
+        {
+            // no neighbours
+            continue;
+        }
+/*
+        for (int nh = 0; nh < neighbours.size(); nh++)
+        {
+            neighbours.at(nh).printNeighbour();
+        }
+        cout << endl;
+*/
+        int max_nh_idx = 0;
+        for (int nh = 1; nh < neighbours.size(); nh++)
+        {
+            if (neighbours.at(nh).getGoodInc() > neighbours.at(max_nh_idx).getGoodInc())
+            {
+                max_nh_idx = nh;
+            }
+        }
+
+        if (neighbours.at(max_nh_idx).getGoodInc() <= 0)
+        {
+            // on an local optima
+            break;
+            // don't break => just go on
+        }
+        else
+        {
+            // goto neighbour
+            gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+        }
+
+        double score = scoreOrganization();
+        cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << endl;
+    }
+    int end_time = time(NULL);
+    cout << "Took " << (iter - 1) << " steps in time: " << (end_time - start_time) << " secs" << endl;
+}
