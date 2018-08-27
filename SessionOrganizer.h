@@ -34,6 +34,7 @@ class SessionOrganizer
     int parallelTracks;  // p
     int papersInSession; // k
     int sessionsInTrack; // t
+    int totalPapers;
 
     Conference *conference;
 
@@ -43,7 +44,7 @@ class SessionOrganizer
     /**
      * Initialize the conference according to the sorting rule 
      */
-    void initializeConference();
+    // void initializeConference();
 
     /** 
      * Get the neighbours of this state
@@ -64,11 +65,12 @@ class SessionOrganizer
      * Do the local search on this state
      */
     void localSearch ();
-    
+
 
   public:
     SessionOrganizer();
     SessionOrganizer(string filename);
+    void initializeConference();
 
     /**
      * Read in the number of parallel tracks, papers in session, sessions

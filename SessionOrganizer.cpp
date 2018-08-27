@@ -6,6 +6,7 @@
 
 #include "SessionOrganizer.h"
 #include "Util.h"
+#include <algorithm>
 
 SessionOrganizer::SessionOrganizer()
 {
@@ -163,6 +164,36 @@ double SessionOrganizer::scoreOrganization()
 
 void SessionOrganizer::initializeConference()
 {
+    // choose a random row
+    totalPapers = parallelTracks * papersInSession * sessionsInTrack;
+    srand(time(NULL));
+    int row = rand() / ((RAND_MAX + 1u) / totalPapers);
+
+    if (row < 0 || row >= totalPapers)
+    {
+        cout << "Index out of range - SessionOrganizer::initializeConference" << endl;
+        exit(0);
+    }
+
+    vector<pair<double, int>> arr;
+    for (int j = 0; j < totalPapers; j++)
+    {
+        arr.push_back(make_pair(distanceMatrix[row][j], j));
+    }
+    sort(arr.begin(), arr.end());
+
+    int paperCounter = 0;
+    for (int j = 0; j < parallelTracks; j++)
+    {
+        for (int i = 0; i < sessionsInTrack; i++)
+        {
+            for (int k = 0; k < papersInSession; k++)
+            {
+                conference->setPaper(j, i, k, arr[paperCounter].second);
+                paperCounter++;
+            }
+        }
+    }
 }
 
 vector<Neighbour> SessionOrganizer::getNeighbours()
