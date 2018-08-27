@@ -232,6 +232,7 @@ vector<Neighbour> SessionOrganizer::getNeighbours()
                 trackB = rand() / ((RAND_MAX + 1u) / parallelTracks);
             }
 
+            /*
             // choose the exchange size with geometric distribution
             int exSize = 1;
             while (exSize < papersInSession)
@@ -248,7 +249,9 @@ vector<Neighbour> SessionOrganizer::getNeighbours()
                     // got heads
                     exSize++;
                 }
-            }
+            }*/
+            // choose exchange size with uniform distribution
+            int exSize = 1 + rand() / ((RAND_MAX + 1u) / (papersInSession - 1));
 
             // create a neighbour with the obtained parameters
             Neighbour ngbour = getNeighbour(true, trackA, trackB, row, row, exSize);
@@ -323,72 +326,84 @@ double SessionOrganizer::sessionExchangeGoodness(int trkA, int trkB, int timeA, 
 {
     double delta = 0;
     int paperA, paperB;
-    for (int p = 0; p < exSize; p++)
+    if (timeA == timeB)
     {
-        paperA = conference->getPaper(trkA, timeA, p);
-
-        for (int track = 0; track < parallelTracks; track++)
+        // Efficient approach for row exchange type
+        for (int p = 0; p < exSize; p++)
         {
-            // subtract distances and similarities for same time slot
-            if (track == trkA) {
-                // subtract similarities
-                for (int j = exSize; j < papersInSession; j++) {
-                    paperB = conference->getPaper(track, timeA, j);
-                    delta -= (1 - distanceMatrix[paperA][paperB]);
-                }
-            } else {
-                // subtract differences
-                for (int j = 0; j < papersInSession; j++) {
-                    paperB = conference->getPaper(track, timeA, j);
-                    delta -= tradeoffCoefficient * distanceMatrix[paperA][paperB];
-                }
+            paperA = conference->getPaper(trkA, timeA, p);
+
+            // add the goodness change due to leaving papers of same sessions
+            for (int j = exSize; j < papersInSession; j++)
+            {
+                paperB = conference->getPaper(trkA, timeA, j);
+                delta += (tradeoffCoefficient + 1) * distanceMatrix[paperA][paperB] - 1;
             }
 
-            // add distances and similarities for new time slot
-            if (track == trkB) {
-                // subtract similarities
-                for (int j = exSize; j < papersInSession; j++) {
-                    paperB = conference->getPaper(track, timeB, j);
-                    delta += (1 - distanceMatrix[paperA][paperB]);
+            // add goodness change due to embracing papers of different sessions
+            for (int j = exSize; j < papersInSession; j++)
+            {
+                paperB = conference->getPaper(trkB, timeB, j);
+                delta -= (tradeoffCoefficient + 1) * distanceMatrix[paperA][paperB] - 1;
+            }
+        }
+    }
+    else
+    {
+        for (int p = 0; p < exSize; p++)
+        {
+            paperA = conference->getPaper(trkA, timeA, p);
+
+            for (int track = 0; track < parallelTracks; track++)
+            {
+                // subtract distances and similarities for same time slot
+                if (track == trkA)
+                {
+                    // subtract similarities
+                    for (int j = exSize; j < papersInSession; j++)
+                    {
+                        paperB = conference->getPaper(track, timeA, j);
+                        delta -= (1 - distanceMatrix[paperA][paperB]);
+                    }
                 }
-            } else {
-                // subtract differences
-                for (int j = 0; j < papersInSession; j++) {
-                    paperB = conference->getPaper(track, timeB, j);
-                    delta += tradeoffCoefficient * distanceMatrix[paperA][paperB];
+                else
+                {
+                    // subtract differences
+                    for (int j = 0; j < papersInSession; j++)
+                    {
+                        paperB = conference->getPaper(track, timeA, j);
+                        delta -= tradeoffCoefficient * distanceMatrix[paperA][paperB];
+                    }
+                }
+
+                // add distances and similarities for new time slot
+                if (track == trkB)
+                {
+                    // subtract similarities
+                    for (int j = exSize; j < papersInSession; j++)
+                    {
+                        paperB = conference->getPaper(track, timeB, j);
+                        delta += (1 - distanceMatrix[paperA][paperB]);
+                    }
+                }
+                else
+                {
+                    // subtract differences
+                    for (int j = 0; j < papersInSession; j++)
+                    {
+                        paperB = conference->getPaper(track, timeB, j);
+                        delta += tradeoffCoefficient * distanceMatrix[paperA][paperB];
+                    }
                 }
             }
         }
     }
-
     return delta;
 
-    /*
-    // Efficient approach for row exchange type
-    double delta = 0;
-    int paperA, paperB;
-    for (int p = 0; p < exSize; p++)
-    {
-        paperA = conference->getPaper(trkA, timeA, p);
-
-        // add the goodness change due to leaving papers of same sessions
-        for (int j = exSize; j < papersInSession; j++)
-        {
-            paperB = conference->getPaper(trkA, timeA, j);
-            delta += (tradeoffCoefficient + 1) * distanceMatrix[paperA][paperB] - 1;
-        }
-
-        // add goodness change due to embracing papers of different sessions
-        for (int j = exSize; j < papersInSession; j++)
-        {
-            paperB = conference->getPaper(trkB, timeB, j);
-            delta -= (tradeoffCoefficient + 1) * distanceMatrix[paperA][paperB] - 1;
-        }
-    }
+    // double delta = 0;
 
     // return the change
     return delta;
-    */
 }
 
 void SessionOrganizer::gotoNeighbour(Neighbour ngh)
@@ -413,7 +428,7 @@ void SessionOrganizer::localSearch()
     int iter = 0;
     double score = scoreOrganization();
     cout << "score:" << score << endl;
-    while (iter++ < 5000)
+    while (iter++ < 50)
     {
         vector<Neighbour> neighbours = getNeighbours();
         // cout << iter << " " << neighbours.size() << endl;
@@ -423,12 +438,11 @@ void SessionOrganizer::localSearch()
             continue;
         }
 
-        /*
         for (int nh = 0; nh < neighbours.size(); nh++)
         {
             neighbours.at(nh).printNeighbour();
         }
-        cout << endl; */
+        cout << endl;
 
         int max_nh_idx = 0;
         for (int nh = 1; nh < neighbours.size(); nh++)

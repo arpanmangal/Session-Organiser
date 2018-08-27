@@ -54,19 +54,19 @@ class SessionOrganizer
      * Get the neighbours of this state
      */
     vector<Neighbour> getNeighbours ();
-    vector<Neighbour> getNeighbours_nc2 ();
+    // vector<Neighbour> getNeighbours_nc2 ();
 
     /**
      * Make and return a neighbour with given parameters
      */
     Neighbour getNeighbour (bool neighbourType, int trkA, int trkB, int timeA, int timeB, int exSize);
-    Neighbour getNeighbour_nc2 ();
+    // Neighbour getNeighbour_nc2 ();
 
     /**
      * Get the change in goodness w.r.t. A, when swapping exSize elements with B
      */
     double sessionExchangeGoodness(int trkA, int trkB, int timeA, int timeB, int exSize);
-    
+    // double timeSessionExchangeGoodness (int )
     /**
      * Change to go the specified neighbour
      */
