@@ -472,24 +472,27 @@ void SessionOrganizer::localSearch()
     cout << "Took " << iter << " steps" << endl;
 }
 
-vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2()
+vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2(bool& close, int& prob)
 {
     vector<Neighboursingle> neighbours;
     // Iterate over all pairs of sessions, and pick all pairs of papers
     for (int trackA = 0; trackA < parallelTracks; trackA++)
     {
-        bool TrueFalse = (rand() % 100) < 90;
+        //bool TrueFalse = true;
+        bool TrueFalse = (rand() % 100) < (100 - prob);
         int timeA,limit;
         if(TrueFalse) 
         {
             timeA = (rand() % sessionsInTrack);
             limit = timeA;
+            close = false;
         }
 
         else
         {
             timeA =0;
             limit = sessionsInTrack-1;
+            close = true;
         }
 
         for (timeA ; timeA <= limit; timeA++)
@@ -644,7 +647,7 @@ void SessionOrganizer::gotoNeighbour_nc2(Neighboursingle ngh)
 
 void SessionOrganizer::localSearch_nc2()
 {
-    double min_Admissible_Val = 2.00;
+    double min_Admissible_Val = 0.01;
     int iter = 0;
     double score = scoreOrganization();
     cout << "score:" << score << endl;
@@ -653,10 +656,13 @@ void SessionOrganizer::localSearch_nc2()
     //int end_time = time(NULL);
 
     double max_prev_itr = 0;
+    int prob_gen;
+    bool close = false;
 
-    while (iter++ < 300)
+    while (iter++ < 1200)
     {
-        vector<Neighboursingle> neighbours = getNeighbours_nc2();
+        prob_gen = iter/100;
+        vector<Neighboursingle> neighbours = getNeighbours_nc2(close,prob_gen);
         // cout << iter << " " << neighbours.size() << endl;
         if (neighbours.size() < 1)
         {
@@ -707,6 +713,8 @@ void SessionOrganizer::localSearch_nc2()
         if (neighbours.at(max_nh_idx).getGoodInc() <= 0)
         {
 
+            if(close) break;
+
             //gotoNeighbour_nc2(neighbours.at(max_nh_idx));
             // on an local optima
              //break;
@@ -725,7 +733,7 @@ void SessionOrganizer::localSearch_nc2()
         double score = scoreOrganization();
         cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
         // end_time = time(NULL);
-        // cout << "Took " <<  iter << " steps in time: " << (end_time - start_time) << " secs" << endl;
+        cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
         // start_time = time(NULL);
     }
     int end_time = time(NULL);
