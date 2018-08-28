@@ -36,6 +36,7 @@ class SessionOrganizer
     int papersInSession; // k
     int sessionsInTrack; // t
     int totalPapers;
+    //double min_Admissible_Val = 0.01;
 
     double neighbourRowSelectionProb;
     int numberNeighbours;

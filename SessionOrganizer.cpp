@@ -17,6 +17,7 @@ SessionOrganizer::SessionOrganizer()
     sessionsInTrack = 0;
     processingTimeInMinutes = 0;
     tradeoffCoefficient = 1.0;
+    //min_Admissible_Val = 0.01;
 }
 
 SessionOrganizer::SessionOrganizer(string filename)
@@ -479,21 +480,24 @@ vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2()
     {
         for (int timeA = 0; timeA < sessionsInTrack; timeA++)
         {
-            for (int trackB = 0; trackB < parallelTracks; trackB++)
+            for (int trackB = trackA; trackB < parallelTracks; trackB++)
             {
-                // int timeB;
-                // if(trackA == trackB) timeB = timeA
-                for (int timeB = 0; timeB < sessionsInTrack; timeB++)
+                int timeB;
+                if(trackA == trackB) timeB = timeA + 1;
+                else timeB=0;
+
+                for (timeB; timeB < sessionsInTrack; timeB++)
                 {
-                    if (trackA == trackB && timeA == timeB)
-                        continue;
+                    // if (trackA == trackB && timeA == timeB)
+                    //     continue;
 
                     // pick all pairs of papers
                     for (int paperA = 0; paperA < papersInSession; paperA++)
                     {
-                        for (int paperB = paperA; paperB < papersInSession; paperB++)
+                        for (int paperB = 0; paperB < papersInSession; paperB++)
                         {
                             neighbours.push_back(getNeighbour_nc2(trackA, trackB, timeA, timeB, paperA, paperB));
+                            //cout<< trackA <<"|"<<timeA <<"|"<<trackB <<"|"<<timeB <<"|"<<endl;
                         }
                     }
                 }
@@ -532,10 +536,11 @@ double SessionOrganizer::sessionExchangeGoodness_nc2(int trkA, int trkB, int tim
             paperB = conference->getPaper(trkB, timeB, p);
 
             // add similarity
-            delta += 1 - distanceMatrix[paperA][paperIdxA];
+            //delta += 1 - distanceMatrix[paperA][paperB];
+            delta += (1) - (tradeoffCoefficient + 1 ) * distanceMatrix[paperA][paperB];
 
             // subtract difference
-            delta -= tradeoffCoefficient * distanceMatrix[paperA][paperB];
+            //delta -= tradeoffCoefficient * distanceMatrix[paperA][paperB];
         }
 
         // process session A
@@ -547,10 +552,11 @@ double SessionOrganizer::sessionExchangeGoodness_nc2(int trkA, int trkB, int tim
             paperB = conference->getPaper(trkA, timeA, p);
 
             // subtract similarity
-            delta -= 1 - distanceMatrix[paperA][paperB];
+            //delta -= 1 - distanceMatrix[paperA][paperB];
+            delta += (-1) + (tradeoffCoefficient + 1 ) * distanceMatrix[paperA][paperB];
 
             // add difference
-            delta += tradeoffCoefficient * distanceMatrix[paperA][paperB];
+            //delta += tradeoffCoefficient * distanceMatrix[paperA][paperB];
         }
     }
     else
@@ -623,11 +629,15 @@ void SessionOrganizer::gotoNeighbour_nc2(Neighboursingle ngh)
 
 void SessionOrganizer::localSearch_nc2()
 {
+    double min_Admissible_Val = 0.01;
     int iter = 0;
     double score = scoreOrganization();
     cout << "score:" << score << endl;
 
     int start_time = time(NULL);
+    //int end_time = time(NULL);
+
+    double max_prev_itr = 0;
 
     while (iter++ < 400)
     {
@@ -646,24 +656,33 @@ void SessionOrganizer::localSearch_nc2()
         cout << endl;
 */
         int max_nh_idx = 0;
+        //cout <<
         for (int nh = 1; nh < neighbours.size(); nh++)
         {
             bool ab=false;
-            if (neighbours.at(nh).getGoodInc() > neighbours.at(max_nh_idx).getGoodInc())
+            if (neighbours.at(nh).getGoodInc() >= neighbours.at(max_nh_idx).getGoodInc() && neighbours.at(nh).getGoodInc() > min_Admissible_Val )
             {
                 max_nh_idx = nh;
                 // if (neighbours.at(max_nh_idx).getGoodInc() > 0) ab = true;
                 // if(ab) gotoNeighbour_nc2(neighbours.at(max_nh_idx));
 
-                if (neighbours.at(max_nh_idx).getGoodInc() > 0) gotoNeighbour_nc2(neighbours.at(max_nh_idx));
-
+                //if (neighbours.at(max_nh_idx).getGoodInc() > 0)
+                 gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+                //neighbours.at(nh).printNeighbour();
             }
+
+            //if (neighbours.at(max_nh_idx).getGoodInc() >= max_prev_itr) gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+
         }
+
+        max_prev_itr = neighbours.at(max_nh_idx).getGoodInc();
 
         if (neighbours.at(max_nh_idx).getGoodInc() <= 0)
         {
+
+            //gotoNeighbour_nc2(neighbours.at(max_nh_idx));
             // on an local optima
-            break;
+             break;
             // don't break => just go on
         }
         else
@@ -673,7 +692,10 @@ void SessionOrganizer::localSearch_nc2()
         }
 
         double score = scoreOrganization();
-        cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << endl;
+        cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
+        // end_time = time(NULL);
+        // cout << "Took " <<  iter << " steps in time: " << (end_time - start_time) << " secs" << endl;
+        // start_time = time(NULL);
     }
     int end_time = time(NULL);
     cout << "Took " << (iter - 1) << " steps in time: " << (end_time - start_time) << " secs" << endl;

@@ -3,6 +3,8 @@
 Neighboursingle::Neighboursingle (int trkA, int trkB, int timeA, int timeB, int paperA, int paperB, double goodInc) {
     // Initialise the neighbour
 
+    type = (timeA == timeB);
+
     trackA = trkA;
     trackB = trkB;
     timeSlotA = timeA;
