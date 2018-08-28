@@ -56,7 +56,7 @@ class SessionOrganizer
      * Get the neighbours of this state
      */
     vector<Neighbour> getNeighbours ();
-    vector<Neighboursingle> getNeighbours_nc2 ();
+    vector<Neighboursingle> getNeighbours_nc2 (bool& typ, int& prob);
 
     /**
      * Make and return a neighbour with given parameters
