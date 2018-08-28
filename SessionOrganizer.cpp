@@ -478,8 +478,23 @@ vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2()
     // Iterate over all pairs of sessions, and pick all pairs of papers
     for (int trackA = 0; trackA < parallelTracks; trackA++)
     {
-        for (int timeA = 0; timeA < sessionsInTrack; timeA++)
+        bool TrueFalse = (rand() % 100) < 90;
+        int timeA,limit;
+        if(TrueFalse) 
         {
+            timeA = (rand() % sessionsInTrack);
+            limit = timeA;
+        }
+
+        else
+        {
+            timeA =0;
+            limit = sessionsInTrack-1;
+        }
+
+        for (timeA ; timeA <= limit; timeA++)
+        {
+            
             for (int trackB = trackA; trackB < parallelTracks; trackB++)
             {
                 int timeB;
@@ -629,7 +644,7 @@ void SessionOrganizer::gotoNeighbour_nc2(Neighboursingle ngh)
 
 void SessionOrganizer::localSearch_nc2()
 {
-    double min_Admissible_Val = 0.01;
+    double min_Admissible_Val = 2.00;
     int iter = 0;
     double score = scoreOrganization();
     cout << "score:" << score << endl;
@@ -639,7 +654,7 @@ void SessionOrganizer::localSearch_nc2()
 
     double max_prev_itr = 0;
 
-    while (iter++ < 400)
+    while (iter++ < 300)
     {
         vector<Neighboursingle> neighbours = getNeighbours_nc2();
         // cout << iter << " " << neighbours.size() << endl;
@@ -657,9 +672,11 @@ void SessionOrganizer::localSearch_nc2()
 */
         int max_nh_idx = 0;
         //cout <<
+
+        bool ab= true;
         for (int nh = 1; nh < neighbours.size(); nh++)
         {
-            bool ab=false;
+            
             if (neighbours.at(nh).getGoodInc() >= neighbours.at(max_nh_idx).getGoodInc() && neighbours.at(nh).getGoodInc() > min_Admissible_Val )
             {
                 max_nh_idx = nh;
@@ -668,7 +685,17 @@ void SessionOrganizer::localSearch_nc2()
 
                 //if (neighbours.at(max_nh_idx).getGoodInc() > 0)
                  gotoNeighbour_nc2(neighbours.at(max_nh_idx));
-                //neighbours.at(nh).printNeighbour();
+                 //neighbours.at(nh).printNeighbour();
+                 ab = false;
+            }
+            else 
+            {
+                ab = ab && true;
+            }
+
+            if (neighbours.at(nh).getGoodInc() >= neighbours.at(max_nh_idx).getGoodInc() && ab)
+            {
+                max_nh_idx = nh;
             }
 
             //if (neighbours.at(max_nh_idx).getGoodInc() >= max_prev_itr) gotoNeighbour_nc2(neighbours.at(max_nh_idx));
@@ -682,13 +709,17 @@ void SessionOrganizer::localSearch_nc2()
 
             //gotoNeighbour_nc2(neighbours.at(max_nh_idx));
             // on an local optima
-             break;
+             //break;
             // don't break => just go on
         }
         else
         {
             // goto neighbour
-            //gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+            if(ab)
+            {
+                neighbours.at(max_nh_idx).printNeighbour();
+                gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+            }
         }
 
         double score = scoreOrganization();
