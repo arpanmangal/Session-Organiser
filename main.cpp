@@ -31,8 +31,8 @@ int main(int argc, char **argv)
     srand(time(NULL));
     // Organize the papers into tracks based on similarity.
     // organizer->organizePapers ( );
-    organizer->initializeConference();
-    // organizer->initializeConferenceRandomly();
+     organizer->initializeConference();
+     //organizer->initializeConferenceRandomly();
     // organizer->localSearch();
     organizer->localSearch_nc2();
 

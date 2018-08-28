@@ -734,7 +734,11 @@ void SessionOrganizer::localSearch_nc2()
     int prob_gen;
     bool close = false;
 
-    while (iter++ < 1200)
+    int max_ch= 20 ,cnt_ch=0,max_score=0;
+
+    double min_val_change = -8.0;
+
+    while (iter++ < 2000)
     {
         prob_gen = iter/100;
         vector<Neighboursingle> neighbours = getNeighbours_nc2(close,prob_gen);
@@ -785,10 +789,29 @@ void SessionOrganizer::localSearch_nc2()
 
         max_prev_itr = neighbours.at(max_nh_idx).getGoodInc();
 
-        if (neighbours.at(max_nh_idx).getGoodInc() <= 0)
+        if (neighbours.at(max_nh_idx).getGoodInc() <= min_Admissible_Val)
         {
 
-            if(close) break;
+            if(close && cnt_ch < max_ch)
+            {
+                double score = scoreOrganization();
+                if(score > max_score) max_score = score;
+                cout<<endl;
+                cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
+                cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
+
+                for (int nh = 1; nh < neighbours.size(); nh++)
+                {
+                    if ( neighbours.at(nh).getGoodInc() > min_val_change)
+                    {
+                        max_nh_idx = nh;                        
+                        gotoNeighbour_nc2(neighbours.at(max_nh_idx));                        
+                    }
+                }
+                cnt_ch++;
+            }
+
+            else if(close) break;
 
             //gotoNeighbour_nc2(neighbours.at(max_nh_idx));
             // on an local optima
@@ -805,12 +828,13 @@ void SessionOrganizer::localSearch_nc2()
             }
         }
 
-        double score = scoreOrganization();
-        cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
+        
+        // cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
         // end_time = time(NULL);
-        cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
+        // cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
         // start_time = time(NULL);
     }
     int end_time = time(NULL);
+    cout<< "Score: "<<max_score<<endl;
     cout << "Took " << (iter - 1) << " steps in time: " << (end_time - start_time) << " secs" << endl;
 }
