@@ -32,6 +32,7 @@ int main(int argc, char **argv)
     // Organize the papers into tracks based on similarity.
     // organizer->organizePapers ( );
     organizer->initializeConference();
+    // organizer->initializeConferenceRandomly();
     // organizer->localSearch();
     organizer->localSearch_nc2();
 

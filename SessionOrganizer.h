@@ -87,6 +87,8 @@ class SessionOrganizer
     SessionOrganizer();
     SessionOrganizer(string filename);
     void initializeConference();
+    void initializeConferenceFullSort();
+    void initializeConferenceRandomly();
     void localSearch ();
     void localSearch_nc2();
 

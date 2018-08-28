@@ -204,6 +204,79 @@ void SessionOrganizer::initializeConference()
     }
 }
 
+void SessionOrganizer::initializeConferenceFullSort()
+{
+    totalPapers = parallelTracks * papersInSession * sessionsInTrack;
+    vector<pair<double, int>> arr;
+    for (int j = 0; j < totalPapers; j++)
+    {
+        arr.push_back(make_pair(0, j));
+    }
+
+    for (int p = 0; p < parallelTracks; p++)
+    {
+        int start = p * sessionsInTrack * papersInSession;
+
+        // Choose a random no. between start and n-1, interval size = n - start
+        int pivot = start + rand() / ((RAND_MAX + 1u) / (totalPapers - start));
+        if (pivot < start || pivot >= totalPapers)
+        {
+            cout << "Pivot out of range - SessionOrganizer::initializeConference" << endl;
+            pivot = start;
+        }
+
+        // Fill in the distances according to the pivot
+        for (int j = start; j < totalPapers; j++)
+        {
+            int row = arr[pivot].second;
+            int col = arr[j].second;
+            arr[j].first = distanceMatrix[row][col];
+        }
+
+        // Sort the remaining distances
+        sort(arr.begin() + start, arr.end());
+
+        // fill the next set
+        for (int t = 0; t < sessionsInTrack; t++)
+        {
+            for (int k = 0; k < papersInSession; k++)
+            {
+                conference->setPaper(p, t, k, arr[start + t * papersInSession + k].second);
+            }
+        }
+
+        // cout << start << " | " << pivot << endl;
+        // for (int j = 0; j < totalPapers; j++) {
+        //     cout << arr[j].second << "|" << arr[j].first << ", ";
+        // }
+        // cout << endl;
+    }
+}
+
+void SessionOrganizer::initializeConferenceRandomly()
+{
+    totalPapers = parallelTracks * papersInSession * sessionsInTrack;
+    vector<int> arr;
+    for (int j = 0; j < totalPapers; j++)
+    {
+        arr.push_back(j);
+    }
+    random_shuffle(arr.begin(), arr.end());
+
+    int paperCounter = 0;
+    for (int j = 0; j < parallelTracks; j++)
+    {
+        for (int i = 0; i < sessionsInTrack; i++)
+        {
+            for (int k = 0; k < papersInSession; k++)
+            {
+                conference->setPaper(j, i, k, arr[paperCounter]);
+                paperCounter++;
+            }
+        }
+    }
+}
+
 vector<Neighbour> SessionOrganizer::getNeighbours()
 {
     // srand(time(NULL));
@@ -478,9 +551,9 @@ vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2()
     // Iterate over all pairs of sessions, and pick all pairs of papers
     for (int trackA = 0; trackA < parallelTracks; trackA++)
     {
-        bool TrueFalse = (rand() % 100) < 90;
-        int timeA,limit;
-        if(TrueFalse) 
+        bool TrueFalse = (rand() % 100) < 95;
+        int timeA, limit;
+        if (TrueFalse)
         {
             timeA = (rand() % sessionsInTrack);
             limit = timeA;
@@ -488,18 +561,20 @@ vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2()
 
         else
         {
-            timeA =0;
-            limit = sessionsInTrack-1;
+            timeA = 0;
+            limit = sessionsInTrack - 1;
         }
 
-        for (timeA ; timeA <= limit; timeA++)
+        for (timeA; timeA <= limit; timeA++)
         {
-            
+
             for (int trackB = trackA; trackB < parallelTracks; trackB++)
             {
                 int timeB;
-                if(trackA == trackB) timeB = timeA + 1;
-                else timeB=0;
+                if (trackA == trackB)
+                    timeB = timeA + 1;
+                else
+                    timeB = 0;
 
                 for (timeB; timeB < sessionsInTrack; timeB++)
                 {
@@ -552,7 +627,7 @@ double SessionOrganizer::sessionExchangeGoodness_nc2(int trkA, int trkB, int tim
 
             // add similarity
             //delta += 1 - distanceMatrix[paperA][paperB];
-            delta += (1) - (tradeoffCoefficient + 1 ) * distanceMatrix[paperA][paperB];
+            delta += (1) - (tradeoffCoefficient + 1) * distanceMatrix[paperA][paperB];
 
             // subtract difference
             //delta -= tradeoffCoefficient * distanceMatrix[paperA][paperB];
@@ -568,7 +643,7 @@ double SessionOrganizer::sessionExchangeGoodness_nc2(int trkA, int trkB, int tim
 
             // subtract similarity
             //delta -= 1 - distanceMatrix[paperA][paperB];
-            delta += (-1) + (tradeoffCoefficient + 1 ) * distanceMatrix[paperA][paperB];
+            delta += (-1) + (tradeoffCoefficient + 1) * distanceMatrix[paperA][paperB];
 
             // add difference
             //delta += tradeoffCoefficient * distanceMatrix[paperA][paperB];
@@ -634,17 +709,17 @@ double SessionOrganizer::sessionExchangeGoodness_nc2(int trkA, int trkB, int tim
 
 void SessionOrganizer::gotoNeighbour_nc2(Neighboursingle ngh)
 {
-        // Convert the current conference state to that represented by the given neighbour
-        int paperA = conference->getPaper(ngh.getTrackA(), ngh.getTimeA(), ngh.getPaperIdxA());
-        int paperB = conference->getPaper(ngh.getTrackB(), ngh.getTimeB(), ngh.getPaperIdxB());
+    // Convert the current conference state to that represented by the given neighbour
+    int paperA = conference->getPaper(ngh.getTrackA(), ngh.getTimeA(), ngh.getPaperIdxA());
+    int paperB = conference->getPaper(ngh.getTrackB(), ngh.getTimeB(), ngh.getPaperIdxB());
 
-        conference->setPaper(ngh.getTrackA(), ngh.getTimeA(), ngh.getPaperIdxA(), paperB);
-        conference->setPaper(ngh.getTrackB(), ngh.getTimeB(), ngh.getPaperIdxB(), paperA);
+    conference->setPaper(ngh.getTrackA(), ngh.getTimeA(), ngh.getPaperIdxA(), paperB);
+    conference->setPaper(ngh.getTrackB(), ngh.getTimeB(), ngh.getPaperIdxB(), paperA);
 }
 
 void SessionOrganizer::localSearch_nc2()
 {
-    double min_Admissible_Val = 2.00;
+    double min_Admissible_Val = 0.01;
     int iter = 0;
     double score = scoreOrganization();
     cout << "score:" << score << endl;
@@ -654,7 +729,7 @@ void SessionOrganizer::localSearch_nc2()
 
     double max_prev_itr = 0;
 
-    while (iter++ < 300)
+    while (iter++ < 600)
     {
         vector<Neighboursingle> neighbours = getNeighbours_nc2();
         // cout << iter << " " << neighbours.size() << endl;
@@ -663,32 +738,33 @@ void SessionOrganizer::localSearch_nc2()
             // no neighbours
             continue;
         }
-/*
+        /*
         for (int nh = 0; nh < neighbours.size(); nh++)
         {
             neighbours.at(nh).printNeighbour();
         }
         cout << endl;
-*/
+        */
+
         int max_nh_idx = 0;
         //cout <<
 
-        bool ab= true;
+        bool ab = true;
         for (int nh = 1; nh < neighbours.size(); nh++)
         {
-            
-            if (neighbours.at(nh).getGoodInc() >= neighbours.at(max_nh_idx).getGoodInc() && neighbours.at(nh).getGoodInc() > min_Admissible_Val )
+
+            if (neighbours.at(nh).getGoodInc() >= neighbours.at(max_nh_idx).getGoodInc() && neighbours.at(nh).getGoodInc() > min_Admissible_Val)
             {
                 max_nh_idx = nh;
                 // if (neighbours.at(max_nh_idx).getGoodInc() > 0) ab = true;
                 // if(ab) gotoNeighbour_nc2(neighbours.at(max_nh_idx));
 
                 //if (neighbours.at(max_nh_idx).getGoodInc() > 0)
-                 gotoNeighbour_nc2(neighbours.at(max_nh_idx));
-                 //neighbours.at(nh).printNeighbour();
-                 ab = false;
+                gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+                //neighbours.at(nh).printNeighbour();
+                ab = false;
             }
-            else 
+            else
             {
                 ab = ab && true;
             }
@@ -699,7 +775,6 @@ void SessionOrganizer::localSearch_nc2()
             }
 
             //if (neighbours.at(max_nh_idx).getGoodInc() >= max_prev_itr) gotoNeighbour_nc2(neighbours.at(max_nh_idx));
-
         }
 
         max_prev_itr = neighbours.at(max_nh_idx).getGoodInc();
@@ -709,13 +784,13 @@ void SessionOrganizer::localSearch_nc2()
 
             //gotoNeighbour_nc2(neighbours.at(max_nh_idx));
             // on an local optima
-             //break;
+            //break;
             // don't break => just go on
         }
         else
         {
             // goto neighbour
-            if(ab)
+            if (ab)
             {
                 neighbours.at(max_nh_idx).printNeighbour();
                 gotoNeighbour_nc2(neighbours.at(max_nh_idx));
