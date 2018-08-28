@@ -481,6 +481,8 @@ vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2()
         {
             for (int trackB = 0; trackB < parallelTracks; trackB++)
             {
+                // int timeB;
+                // if(trackA == trackB) timeB = timeA
                 for (int timeB = 0; timeB < sessionsInTrack; timeB++)
                 {
                     if (trackA == trackB && timeA == timeB)
@@ -489,7 +491,7 @@ vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2()
                     // pick all pairs of papers
                     for (int paperA = 0; paperA < papersInSession; paperA++)
                     {
-                        for (int paperB = 0; paperB < papersInSession; paperB++)
+                        for (int paperB = paperA; paperB < papersInSession; paperB++)
                         {
                             neighbours.push_back(getNeighbour_nc2(trackA, trackB, timeA, timeB, paperA, paperB));
                         }
@@ -627,7 +629,7 @@ void SessionOrganizer::localSearch_nc2()
 
     int start_time = time(NULL);
 
-    while (iter++ < 200)
+    while (iter++ < 400)
     {
         vector<Neighboursingle> neighbours = getNeighbours_nc2();
         // cout << iter << " " << neighbours.size() << endl;
@@ -646,9 +648,15 @@ void SessionOrganizer::localSearch_nc2()
         int max_nh_idx = 0;
         for (int nh = 1; nh < neighbours.size(); nh++)
         {
+            bool ab=false;
             if (neighbours.at(nh).getGoodInc() > neighbours.at(max_nh_idx).getGoodInc())
             {
                 max_nh_idx = nh;
+                // if (neighbours.at(max_nh_idx).getGoodInc() > 0) ab = true;
+                // if(ab) gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+
+                if (neighbours.at(max_nh_idx).getGoodInc() > 0) gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+
             }
         }
 
@@ -661,7 +669,7 @@ void SessionOrganizer::localSearch_nc2()
         else
         {
             // goto neighbour
-            gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+            //gotoNeighbour_nc2(neighbours.at(max_nh_idx));
         }
 
         double score = scoreOrganization();
