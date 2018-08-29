@@ -689,13 +689,13 @@ void SessionOrganizer::localSearch_nc2()
     int prob_gen;
     bool close = false;
 
-    int max_ch = 25, cnt_ch = 0, max_score = 0;
+    int max_ch = 25, cnt_ch = 0;
 
-    double min_val_change = -8.0;
+    double min_val_change = -8.0 ,max_score=0;
 
     int hillCount = 1;
 
-    int max_pap_limit = 100;
+    int max_pap_limit = 400;
 
     bool type =  (totalPapers < max_pap_limit) ;
     //
@@ -704,6 +704,13 @@ void SessionOrganizer::localSearch_nc2()
 
     while (iter++)
     {
+
+        if(iter % 2000 ==0)
+        {
+            cout << max_score <<endl;
+            //if() cout << max_score;
+        }
+
         // Break if out of time
         if (isOutOfTime())
         {
@@ -720,6 +727,13 @@ void SessionOrganizer::localSearch_nc2()
         }
             
         else neighbours = getNeighbours();
+
+        if (neighbours.size() < 1)
+        {
+            //cout << iter << endl;
+            // no neighbours
+            continue;
+        }
 
 
         int ngh_size = neighbours.size();
@@ -741,11 +755,7 @@ void SessionOrganizer::localSearch_nc2()
             arr[j] = temp;
         }
 
-        if (neighbours.size() < 1)
-        {
-            // no neighbours
-            continue;
-        }
+
 
         int max_nh_idx = arr[0];
         // bool ab = true;
@@ -761,11 +771,16 @@ void SessionOrganizer::localSearch_nc2()
                     gotoNeighbour_nc2(neighbours.at(max_nh_idx));
                 }
                 //neighbours.at(nh).printNeighbour();
-                // ab = false;                
+                // ab = false;  
+                //gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+              
             }
 
-            if(!type) 
+            if(!type )
+            //&& (neighbours.at(max_nh_idx).getGoodInc()> min_Admissible_Val)) 
             {
+                //if (neighbours.at(max_nh_idx).getGoodInc()< min_Admissible_Val)  gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+                
                 gotoNeighbour_nc2(neighbours.at(max_nh_idx));
             }
 
@@ -821,13 +836,24 @@ void SessionOrganizer::localSearch_nc2()
         score = scoreOrganization();
         // min_Admissible_Val = max(min_Admissible_Val, score/5000 );
 
-        if(iter % 10000 == 0)
+        if( score > max_score)
         {
-            cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
-            cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
+            max_score = score;
+        }
+
+        // if(iter > 5000 || iter <6000)
+        // {
+        //     cout << max_score ;
+        //     //if() cout << max_score;
+        // }
+
+        // if(iter % 10000 == 0)
+        // {
+        //     cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
+        //     cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
  
 
-        }
+        // }
 
    }
 
