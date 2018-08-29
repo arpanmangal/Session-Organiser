@@ -695,7 +695,7 @@ void SessionOrganizer::localSearch_nc2()
 
     int hillCount = 1;
 
-    int max_pap_limit = 700;
+    int max_pap_limit = 100;
 
     bool type =  (totalPapers < max_pap_limit) ;
     //
@@ -787,7 +787,7 @@ void SessionOrganizer::localSearch_nc2()
                     updateMaximum(score);
                 }
                 // cout << endl;
-                // cout << "Hill: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
+                cout << "Hill: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
                 // cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
                 // cout << "Took " << iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
 
@@ -821,9 +821,15 @@ void SessionOrganizer::localSearch_nc2()
         score = scoreOrganization();
         // min_Admissible_Val = max(min_Admissible_Val, score/5000 );
 
-        cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
-        cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
-    }
+        if(iter % 10000 == 0)
+        {
+            cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
+            cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
+ 
+
+        }
+
+   }
 
     // Check for score
     score = scoreOrganization();
