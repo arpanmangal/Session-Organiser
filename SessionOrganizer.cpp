@@ -581,9 +581,6 @@ vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2(bool& close, int& pr
 
                 for (timeB; timeB < sessionsInTrack; timeB++)
                 {
-                    // if (trackA == trackB && timeA == timeB)
-                    //     continue;
-
                     // pick all pairs of papers
                     for (int paperA = 0; paperA < papersInSession; paperA++)
                     {
@@ -728,7 +725,6 @@ void SessionOrganizer::localSearch_nc2()
     cout << "score:" << score << endl;
 
     int start_time = time(NULL);
-    //int end_time = time(NULL);
 
     double max_prev_itr = 0;
     int prob_gen;
@@ -743,11 +739,13 @@ void SessionOrganizer::localSearch_nc2()
         prob_gen = iter/100;
         vector<Neighboursingle> neighbours = getNeighbours_nc2(close,prob_gen);
         // cout << iter << " " << neighbours.size() << endl;
+
         if (neighbours.size() < 1)
         {
             // no neighbours
             continue;
         }
+
         /*
         for (int nh = 0; nh < neighbours.size(); nh++)
         {
@@ -757,34 +755,23 @@ void SessionOrganizer::localSearch_nc2()
         */
 
         int max_nh_idx = 0;
-        //cout <<
-
         bool ab = true;
+
         for (int nh = 1; nh < neighbours.size(); nh++)
         {
 
             if (neighbours.at(nh).getGoodInc() >= neighbours.at(max_nh_idx).getGoodInc() && neighbours.at(nh).getGoodInc() > min_Admissible_Val)
             {
                 max_nh_idx = nh;
-                // if (neighbours.at(max_nh_idx).getGoodInc() > 0) ab = true;
-                // if(ab) gotoNeighbour_nc2(neighbours.at(max_nh_idx));
-
-                //if (neighbours.at(max_nh_idx).getGoodInc() > 0)
                 gotoNeighbour_nc2(neighbours.at(max_nh_idx));
                 //neighbours.at(nh).printNeighbour();
                 ab = false;
-            }
-            else
-            {
-                ab = ab && true;
             }
 
             if (neighbours.at(nh).getGoodInc() >= neighbours.at(max_nh_idx).getGoodInc() && ab)
             {
                 max_nh_idx = nh;
             }
-
-            //if (neighbours.at(max_nh_idx).getGoodInc() >= max_prev_itr) gotoNeighbour_nc2(neighbours.at(max_nh_idx));
         }
 
         max_prev_itr = neighbours.at(max_nh_idx).getGoodInc();
@@ -812,11 +799,6 @@ void SessionOrganizer::localSearch_nc2()
             }
 
             else if(close) break;
-
-            //gotoNeighbour_nc2(neighbours.at(max_nh_idx));
-            // on an local optima
-            //break;
-            // don't break => just go on
         }
         else
         {
@@ -828,11 +810,8 @@ void SessionOrganizer::localSearch_nc2()
             }
         }
 
-        
         // cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
-        // end_time = time(NULL);
         // cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
-        // start_time = time(NULL);
     }
     int end_time = time(NULL);
     cout<< "Score: "<<max_score<<endl;
