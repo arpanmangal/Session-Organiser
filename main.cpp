@@ -27,7 +27,6 @@ int main(int argc, char **argv)
 
     // Initialize the conference organizer.
     SessionOrganizer *organizer = new SessionOrganizer(inputfilename);
-
     srand(time(NULL));
     // Organize the papers into tracks based on similarity.
     // organizer->organizePapers ( );
@@ -39,8 +38,8 @@ int main(int argc, char **argv)
     organizer->printSessionOrganiser(argv[2]);
 
     // Score the organization against the gold standard.
-    double score = organizer->scoreOrganization();
-    cout << "score:" << score << endl;
+    // double score = organizer->scoreOrganization();
+    // cout << "score:" << score << endl;
 
     return 0;
 }

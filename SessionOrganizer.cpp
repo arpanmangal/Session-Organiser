@@ -23,10 +23,15 @@
 
 SessionOrganizer::SessionOrganizer(string filename)
 {
+    // Initialize time
+    organizerStartTime = time(NULL) - 1; // current time - 1 to account for some delays
+
     readInInputFile(filename);
     conference = new Conference(parallelTracks, sessionsInTrack, papersInSession);
     bestConference = new Conference(parallelTracks, sessionsInTrack, papersInSession);
     maxGoodness = -1;
+
+    processingTimeInSeconds = processingTimeInMinutes * 60;
 
     // Initialising various probabilities
     neighbourRowSelectionProb = 0.5;
@@ -118,7 +123,8 @@ double **SessionOrganizer::getDistanceMatrix()
 
 void SessionOrganizer::printSessionOrganiser(char *filename)
 {
-    conference->printConference(filename);
+    /* Print the best conference in the file */
+    bestConference->printConference(filename);
 }
 
 double SessionOrganizer::scoreOrganization()
@@ -753,6 +759,40 @@ void SessionOrganizer::updateMaximum(double newMaxGoodness)
     maxGoodness = newMaxGoodness;
 }
 
+bool SessionOrganizer::isOutOfTime()
+{
+    // Checks if our time is going to be over
+
+    int timeElapsed = time(NULL) - organizerStartTime;
+    int timeRemaining = processingTimeInSeconds - timeElapsed;
+
+    if (totalPapers <= 200)
+    {
+        // Give extra 2 secs
+        return (timeRemaining <= 2);
+    }
+    else if (totalPapers <= 750)
+    {
+        // Give extra 4 secs
+        return (timeRemaining <= 4);
+    }
+    else if (totalPapers <= 1500)
+    {
+        // Give extra 7 secs
+        return (timeRemaining <= 7);
+    }
+    else if (totalPapers <= 2500)
+    {
+        // Give extra 10 secs
+        return (timeRemaining <= 10);
+    }
+    else
+    {
+        // Give extra 15 secs
+        return (timeRemaining <= 15);
+    }
+}
+
 void SessionOrganizer::localSearch_nc2()
 {
     double min_Admissible_Val = 0.01;
@@ -777,6 +817,12 @@ void SessionOrganizer::localSearch_nc2()
 
     while (iter++)
     {
+        // Break if out of time
+        if (isOutOfTime())
+        {
+            break;
+        }
+
         prob_gen = min(iter / 100, 50);
         vector<Neighboursingle> neighbours = getNeighbours_nc2(close, prob_gen);
         int ngh_size = neighbours.size();
@@ -836,10 +882,10 @@ void SessionOrganizer::localSearch_nc2()
                 if (score > maxGoodness)
                 {
                     // Update the global schedule
-                    updateMaximum (score);
+                    updateMaximum(score);
                 }
                 // cout << endl;
-                cout << "Hill: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
+                // cout << "Hill: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
                 // cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
                 // cout << "Took " << iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
 
@@ -876,7 +922,18 @@ void SessionOrganizer::localSearch_nc2()
         // cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
         // cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
     }
+
+    // Check for score
+    score = scoreOrganization();
+    if (score > maxGoodness)
+    {
+        // Update the global schedule
+        updateMaximum(score);
+    }
+
+    // Print time taken
     int end_time = time(NULL);
-    cout << "Score: " << max_score << endl;
-    cout << "Took " << (iter - 1) << " steps in time: " << (end_time - start_time) << " secs" << endl;
+    double timeConsumed = (end_time - organizerStartTime) / 60.0;
+    cout << "Score: " << maxGoodness << " | Time: " << timeConsumed << " min / " << processingTimeInMinutes << " min :)"  << endl;
+    // cout << "Took " << (iter - 1) << " steps in time: " << (end_time - start_time) << " secs" << endl;
 }

@@ -46,6 +46,8 @@ class SessionOrganizer
     double neighbourGeoProb;
 
     double processingTimeInMinutes;
+    int processingTimeInSeconds;
+    int organizerStartTime;
     double tradeoffCoefficient; // the tradeoff coefficient
 
     /**
@@ -83,6 +85,8 @@ class SessionOrganizer
      */
     // void localSearch ();
 
+    void updateMaximum (double newMaxGoodness);
+    bool isOutOfTime();
 
   public:
     // SessionOrganizer();
@@ -92,8 +96,6 @@ class SessionOrganizer
     void initializeConferenceRandomly();
     void localSearch ();
     void localSearch_nc2();
-
-    void updateMaximum (double newMaxGoodness);
 
     /**
      * Read in the number of parallel tracks, papers in session, sessions
