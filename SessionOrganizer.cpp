@@ -290,25 +290,25 @@ vector<Neighboursingle> SessionOrganizer::getNeighbours()
 {
     vector<Neighboursingle> neighbours;
 
-    int par_m = min(((parallelTracks)/4 +1),parallelTracks); 
-    int ses_m = min(sessionsInTrack, (sessionsInTrack/4+1));
-    int pap_nu = min(papersInSession, (papersInSession/4 +1));
+    int par_m = min(((parallelTracks) / 4 + 1), parallelTracks);
+    int ses_m = min(sessionsInTrack, (sessionsInTrack / 4 + 1));
+    int pap_nu = min(papersInSession, (papersInSession / 4 + 1));
 
     int arr1[par_m];
     int arr2[ses_m];
     int arr3[pap_nu];
 
-    for(int i = 0; i< par_m;i++)
+    for (int i = 0; i < par_m; i++)
     {
         arr1[i] = rand() % parallelTracks;
     }
 
-    for(int i = 0; i< ses_m ;i++)
+    for (int i = 0; i < ses_m; i++)
     {
         arr2[i] = rand() % sessionsInTrack;
     }
-    
-    for(int i = 0; i< pap_nu;i++)
+
+    for (int i = 0; i < pap_nu; i++)
     {
         arr3[i] = rand() % papersInSession;
     }
@@ -322,30 +322,28 @@ vector<Neighboursingle> SessionOrganizer::getNeighbours()
             {
                 int i1, j1, k1;
 
-                for (i1 = (i+1) ; i1 < par_m; i1++)
+                for (i1 = (i + 1); i1 < par_m; i1++)
                 {
-                    for (j1 = (j+1); j1 < ses_m; j1++)
+                    for (j1 = (j + 1); j1 < ses_m; j1++)
                     {
-                        for (k1 = (k+1); k1 < pap_nu; k1++)
+                        for (k1 = (k + 1); k1 < pap_nu; k1++)
                         {
                             //int i1,arr[j1],arr[k1];
                             goodnessChange = 0;
-                            goodnessChange += sessionExchangeGoodness_nc2(arr1[i],arr1[i1],arr2[j],arr2[j1],arr3[k],arr3[k1]);
-                            goodnessChange += sessionExchangeGoodness_nc2(arr1[i1],arr1[i],arr2[j1],arr2[j],arr3[k1],arr3[k]);
+                            goodnessChange += sessionExchangeGoodness_nc2(arr1[i], arr1[i1], arr2[j], arr2[j1], arr3[k], arr3[k1]);
+                            goodnessChange += sessionExchangeGoodness_nc2(arr1[i1], arr1[i], arr2[j1], arr2[j], arr3[k1], arr3[k]);
 
                             // make and return a new neighbour
                             //Neighboursingle ng(trkA, trkB, timeA, timeB, paperIdxA, paperIdxB, goodnessChange);
 
                             if (goodnessChange > -2.0)
                             {
-                                Neighboursingle ng(arr1[i],arr1[i1],arr2[j],arr2[j1],arr3[k],arr3[k1],goodnessChange);
+                                Neighboursingle ng(arr1[i], arr1[i1], arr2[j], arr2[j1], arr3[k], arr3[k1], goodnessChange);
                                 neighbours.push_back(ng);
                             }
-                            
                         }
                     }
                 }
-                
             }
         }
     }
@@ -649,16 +647,18 @@ bool SessionOrganizer::isOutOfTime()
     int timeElapsed = time(NULL) - organizerStartTime;
     int timeRemaining = processingTimeInSeconds - timeElapsed;
 
-    if (totalPapers <= 200)
+    return (timeRemaining <= 2);
+
+    if (totalPapers <= 400)
     {
         // Give extra 2 secs
         return (timeRemaining <= 2);
     }
-    else if (totalPapers <= 750)
+    else
     {
         // Give extra 4 secs
-        return (timeRemaining <= 4);
-    }
+        return (timeRemaining <= 2);
+    } /*
     else if (totalPapers <= 1500)
     {
         // Give extra 7 secs
@@ -673,7 +673,7 @@ bool SessionOrganizer::isOutOfTime()
     {
         // Give extra 15 secs
         return (timeRemaining <= 15);
-    }
+    }*/
 }
 
 void SessionOrganizer::localSearch_nc2()
@@ -691,13 +691,13 @@ void SessionOrganizer::localSearch_nc2()
 
     int max_ch = 25, cnt_ch = 0;
 
-    double min_val_change = -8.0 ,max_score=0;
+    double min_val_change = -8.0, max_score = 0;
 
     int hillCount = 1;
 
     int max_pap_limit = 400;
 
-    bool type =  (totalPapers < max_pap_limit) ;
+    bool type = (totalPapers < max_pap_limit);
     //
     // The while loop needs to be made dependent on time.
     //
@@ -705,11 +705,11 @@ void SessionOrganizer::localSearch_nc2()
     while (iter++)
     {
 
-        if(iter % 2000 ==0)
-        {
-            cout << max_score <<endl;
-            //if() cout << max_score;
-        }
+        // if(iter % 2000 ==0)
+        // {
+        //     cout << max_score <<endl;
+        //     //if() cout << max_score;
+        // }
 
         // Break if out of time
         if (isOutOfTime())
@@ -717,16 +717,26 @@ void SessionOrganizer::localSearch_nc2()
             break;
         }
 
+        // Check for score
+        score = scoreOrganization();
+        if (score > maxGoodness)
+        {
+            // Update the global schedule
+            updateMaximum(score);
+            cout << "Update: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
+        }
+
         prob_gen = min(iter / 100, 50);
 
         vector<Neighboursingle> neighbours;
 
-        if (type) 
+        if (type)
         {
             neighbours = getNeighbours_nc2(close, prob_gen);
         }
-            
-        else neighbours = getNeighbours();
+
+        else
+            neighbours = getNeighbours();
 
         if (neighbours.size() < 1)
         {
@@ -734,7 +744,6 @@ void SessionOrganizer::localSearch_nc2()
             // no neighbours
             continue;
         }
-
 
         int ngh_size = neighbours.size();
         int arr[ngh_size + 1];
@@ -755,8 +764,6 @@ void SessionOrganizer::localSearch_nc2()
             arr[j] = temp;
         }
 
-
-
         int max_nh_idx = arr[0];
         // bool ab = true;
 
@@ -766,25 +773,22 @@ void SessionOrganizer::localSearch_nc2()
             if (neighbours.at(arr[nh]).getGoodInc() >= (neighbours.at(max_nh_idx).getGoodInc()) && neighbours.at(arr[nh]).getGoodInc() > min_Admissible_Val)
             {
                 max_nh_idx = arr[nh];
-                if(type)
+                if (type)
                 {
                     gotoNeighbour_nc2(neighbours.at(max_nh_idx));
                 }
                 //neighbours.at(nh).printNeighbour();
-                // ab = false;  
+                // ab = false;
                 //gotoNeighbour_nc2(neighbours.at(max_nh_idx));
-              
             }
 
-            if(!type )
-            //&& (neighbours.at(max_nh_idx).getGoodInc()> min_Admissible_Val)) 
+            if (!type)
+            //&& (neighbours.at(max_nh_idx).getGoodInc()> min_Admissible_Val))
             {
                 //if (neighbours.at(max_nh_idx).getGoodInc()< min_Admissible_Val)  gotoNeighbour_nc2(neighbours.at(max_nh_idx));
-                
+
                 gotoNeighbour_nc2(neighbours.at(max_nh_idx));
             }
-
-
         }
 
         // max_prev_itr = neighbours.at(max_nh_idx).getGoodInc();
@@ -836,7 +840,7 @@ void SessionOrganizer::localSearch_nc2()
         score = scoreOrganization();
         // min_Admissible_Val = max(min_Admissible_Val, score/5000 );
 
-        if( score > max_score)
+        if (score > max_score)
         {
             max_score = score;
         }
@@ -851,11 +855,9 @@ void SessionOrganizer::localSearch_nc2()
         // {
         //     cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
         //     cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
- 
 
         // }
-
-   }
+    }
 
     // Check for score
     score = scoreOrganization();
@@ -868,6 +870,6 @@ void SessionOrganizer::localSearch_nc2()
     // Print time taken
     int end_time = time(NULL);
     double timeConsumed = (end_time - organizerStartTime) / 60.0;
-    cout << "Score: " << maxGoodness << " | Time: " << timeConsumed << " min / " << processingTimeInMinutes << " min :)"  << endl;
+    cout << "Score: " << maxGoodness << " | Time: " << timeConsumed << " min / " << processingTimeInMinutes << " min :)" << endl;
     // cout << "Took " << (iter - 1) << " steps in time: " << (end_time - start_time) << " secs" << endl;
 }
