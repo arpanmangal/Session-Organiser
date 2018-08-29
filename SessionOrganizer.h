@@ -58,13 +58,13 @@ class SessionOrganizer
     /** 
      * Get the neighbours of this state
      */
-    vector<Neighbour> getNeighbours ();
+    vector<Neighboursingle> getNeighbours ();
     vector<Neighboursingle> getNeighbours_nc2 (bool& typ, int& prob);
 
     /**
      * Make and return a neighbour with given parameters
      */
-    Neighbour getNeighbour (bool neighbourType, int trkA, int trkB, int timeA, int timeB, int exSize);
+    Neighboursingle getNeighbours (int trkA, int trkB, int timeA, int timeB, int paperIdxA, int paperIdxB);
     Neighboursingle getNeighbour_nc2 (int trkA, int trkB, int timeA, int timeB, int paperIdxA, int paperIdxB);
 
     /**
@@ -76,7 +76,7 @@ class SessionOrganizer
     /**
      * Change to go the specified neighbour
      */
-    void gotoNeighbour (Neighbour ngh);
+
     void gotoNeighbour_nc2 (Neighboursingle ngh);
 
 
