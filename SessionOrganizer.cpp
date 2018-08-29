@@ -4,6 +4,8 @@
  * 
  */
 
+//Lines 750 and 817.
+
 #include "SessionOrganizer.h"
 #include "Util.h"
 #include <algorithm>
@@ -748,6 +750,10 @@ void SessionOrganizer::localSearch_nc2()
 
     double min_val_change = -8.0;
 
+    //
+    // The while loop needs to be made dependent on time.
+    //
+
     while (iter++ < 2000)
     {
         prob_gen = iter/100;
@@ -771,24 +777,11 @@ void SessionOrganizer::localSearch_nc2()
             arr[j] = temp;
         }
 
-        // for(int j=0; j< ngh_size; j++)
-        // {
-        //     cout<<arr[j]<<" ";
-        // }
-
         if (neighbours.size() < 1)
         {
             // no neighbours
             continue;
         }
-
-        /*
-        for (int nh = 0; nh < neighbours.size(); nh++)
-        {
-            neighbours.at(nh).printNeighbour();
-        }
-        cout << endl;
-        */
 
         int max_nh_idx = arr[0];
         bool ab = true;
@@ -818,7 +811,14 @@ void SessionOrganizer::localSearch_nc2()
             if(close && cnt_ch < max_ch)
             {
                 double score = scoreOrganization();
-                if(score > max_score) max_score = score;
+                if(score > max_score)
+                {
+                    max_score = score;
+                    //
+                    // Need to save the configuration of our scheduler.
+                    //
+
+                } 
                 cout<<endl;
                 cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
                 cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
@@ -841,7 +841,9 @@ void SessionOrganizer::localSearch_nc2()
             // goto neighbour
             if (ab)
             {
-                neighbours.at(max_nh_idx).printNeighbour();
+                //Seems useless but am not changing it since code working fine!
+
+                //neighbours.at(max_nh_idx).printNeighbour();
                 gotoNeighbour_nc2(neighbours.at(max_nh_idx));
             }
         }
