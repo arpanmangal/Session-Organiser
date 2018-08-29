@@ -20,6 +20,10 @@
 //     processingTimeInMinutes = 0;
 //     tradeoffCoefficient = 1.0;
 // }
+// int generateRandomNumber (int low, int high) {
+//     int range = high - low;
+//     return low + rand() / ((RAND_MAX + 1u) / range);
+// }
 
 SessionOrganizer::SessionOrganizer(string filename)
 {
@@ -697,20 +701,13 @@ void SessionOrganizer::localSearch_nc2()
 
     int max_pap_limit = 400;
 
-    bool type = (totalPapers < max_pap_limit);
+    bool type = (totalPapers <= max_pap_limit);
     //
     // The while loop needs to be made dependent on time.
     //
 
     while (iter++)
     {
-
-        // if(iter % 2000 ==0)
-        // {
-        //     cout << max_score <<endl;
-        //     //if() cout << max_score;
-        // }
-
         // Break if out of time
         if (isOutOfTime())
         {
@@ -718,13 +715,13 @@ void SessionOrganizer::localSearch_nc2()
         }
 
         // Check for score
-        score = scoreOrganization();
-        if (score > maxGoodness)
-        {
-            // Update the global schedule
-            updateMaximum(score);
-            cout << "Update: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
-        }
+        // score = scoreOrganization();
+        // if (score > maxGoodness)
+        // {
+        //     // Update the global schedule
+        //     updateMaximum(score);
+        //     cout << "Update: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
+        // }
 
         prob_gen = min(iter / 100, 50);
 
@@ -740,7 +737,6 @@ void SessionOrganizer::localSearch_nc2()
 
         if (neighbours.size() < 1)
         {
-            //cout << iter << endl;
             // no neighbours
             continue;
         }
@@ -765,7 +761,6 @@ void SessionOrganizer::localSearch_nc2()
         }
 
         int max_nh_idx = arr[0];
-        // bool ab = true;
 
         for (int nh = 0; nh < neighbours.size(); nh++)
         {
@@ -781,17 +776,15 @@ void SessionOrganizer::localSearch_nc2()
                 // ab = false;
                 //gotoNeighbour_nc2(neighbours.at(max_nh_idx));
             }
-
-            if (!type)
-            //&& (neighbours.at(max_nh_idx).getGoodInc()> min_Admissible_Val))
-            {
-                //if (neighbours.at(max_nh_idx).getGoodInc()< min_Admissible_Val)  gotoNeighbour_nc2(neighbours.at(max_nh_idx));
-
-                gotoNeighbour_nc2(neighbours.at(max_nh_idx));
-            }
         }
 
-        // max_prev_itr = neighbours.at(max_nh_idx).getGoodInc();
+        if (!type)
+        //&& (neighbours.at(max_nh_idx).getGoodInc()> min_Admissible_Val))
+        {
+            //if (neighbours.at(max_nh_idx).getGoodInc()< min_Admissible_Val)  gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+
+            gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+        }
 
         if (neighbours.at(max_nh_idx).getGoodInc() <= min_Admissible_Val)
         {
@@ -805,10 +798,7 @@ void SessionOrganizer::localSearch_nc2()
                     // Update the global schedule
                     updateMaximum(score);
                 }
-                // cout << endl;
                 cout << "Hill: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
-                // cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
-                // cout << "Took " << iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
 
                 // Make transitions to neighbours with changes greater than min_val_change
                 for (int nh = 1; nh < neighbours.size(); nh++)
@@ -819,44 +809,16 @@ void SessionOrganizer::localSearch_nc2()
                         gotoNeighbour_nc2(neighbours.at(max_nh_idx));
                     }
                 }
-                // cnt_ch++;
             }
-
-            // else if (close)
-            // break;
         }
-        // else
-        // {
-        //     // goto neighbour
-        //     if (ab)
-        //     {
-        //         //Seems useless but am not changing it since code working fine!
-
-        //         //neighbours.at(max_nh_idx).printNeighbour();
-        //         gotoNeighbour_nc2(neighbours.at(max_nh_idx));
-        //     }
-        // }
 
         score = scoreOrganization();
-        // min_Admissible_Val = max(min_Admissible_Val, score/5000 );
-
-        if (score > max_score)
+        if (score > maxGoodness)
         {
-            max_score = score;
+            // Update the global schedule
+            updateMaximum(score);
+            cout << "Update: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
         }
-
-        // if(iter > 5000 || iter <6000)
-        // {
-        //     cout << max_score ;
-        //     //if() cout << max_score;
-        // }
-
-        // if(iter % 10000 == 0)
-        // {
-        //     cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
-        //     cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
-
-        // }
     }
 
     // Check for score
@@ -871,5 +833,4 @@ void SessionOrganizer::localSearch_nc2()
     int end_time = time(NULL);
     double timeConsumed = (end_time - organizerStartTime) / 60.0;
     cout << "Score: " << maxGoodness << " | Time: " << timeConsumed << " min / " << processingTimeInMinutes << " min :)" << endl;
-    // cout << "Took " << (iter - 1) << " steps in time: " << (end_time - start_time) << " secs" << endl;
 }
