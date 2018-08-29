@@ -36,13 +36,14 @@ class SessionOrganizer
     int papersInSession; // k
     int sessionsInTrack; // t
     int totalPapers;
-    //double min_Admissible_Val = 0.01;
+
+    Conference *conference;
+    Conference *bestConference; // The Maximum found by our algorithm
+    double maxGoodness; // The maximum goodness found by our algorithm
 
     double neighbourRowSelectionProb;
     int numberNeighbours;
     double neighbourGeoProb;
-
-    Conference *conference;
 
     double processingTimeInMinutes;
     double tradeoffCoefficient; // the tradeoff coefficient
@@ -84,13 +85,15 @@ class SessionOrganizer
 
 
   public:
-    SessionOrganizer();
+    // SessionOrganizer();
     SessionOrganizer(string filename);
     void initializeConference();
     void initializeConferenceFullSort();
     void initializeConferenceRandomly();
     void localSearch ();
     void localSearch_nc2();
+
+    void updateMaximum (double newMaxGoodness);
 
     /**
      * Read in the number of parallel tracks, papers in session, sessions

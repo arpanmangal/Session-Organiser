@@ -12,20 +12,21 @@
 #include <ctime>
 #include <math.h>
 
-SessionOrganizer::SessionOrganizer()
-{
-    parallelTracks = 0;
-    papersInSession = 0;
-    sessionsInTrack = 0;
-    processingTimeInMinutes = 0;
-    tradeoffCoefficient = 1.0;
-    //min_Admissible_Val = 0.01;
-}
+// SessionOrganizer::SessionOrganizer()
+// {
+//     parallelTracks = 0;
+//     papersInSession = 0;
+//     sessionsInTrack = 0;
+//     processingTimeInMinutes = 0;
+//     tradeoffCoefficient = 1.0;
+// }
 
 SessionOrganizer::SessionOrganizer(string filename)
 {
     readInInputFile(filename);
     conference = new Conference(parallelTracks, sessionsInTrack, papersInSession);
+    bestConference = new Conference(parallelTracks, sessionsInTrack, papersInSession);
+    maxGoodness = -1;
 
     // Initialising various probabilities
     neighbourRowSelectionProb = 0.5;
@@ -547,7 +548,7 @@ void SessionOrganizer::localSearch()
     cout << "Took " << iter << " steps" << endl;
 }
 
-vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2(bool& close, int& prob)
+vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2(bool &close, int &prob)
 {
     vector<Neighboursingle> neighbours;
     // Iterate over all pairs of sessions, and pick all pairs of papers
@@ -555,8 +556,8 @@ vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2(bool& close, int& pr
     {
         //bool TrueFalse = true;
         bool TrueFalse = (rand() % 100) < (100 - prob);
-        int timeA,limit;
-        if(TrueFalse) 
+        int timeA, limit;
+        if (TrueFalse)
         {
             timeA = (rand() % sessionsInTrack);
             limit = timeA;
@@ -565,8 +566,8 @@ vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2(bool& close, int& pr
 
         else
         {
-            timeA =0;
-            limit = sessionsInTrack-1;
+            timeA = 0;
+            limit = sessionsInTrack - 1;
             close = true;
         }
 
@@ -575,7 +576,7 @@ vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2(bool& close, int& pr
 
             for (int trackB = trackA; trackB < parallelTracks; trackB++)
             {
-                int timeB,paperA,paperB;
+                int timeB, paperA, paperB;
                 double goodnessChange = 0;
                 //Neighboursingle ng;
 
@@ -598,9 +599,9 @@ vector<Neighboursingle> SessionOrganizer::getNeighbours_nc2(bool& close, int& pr
                             // make and return a new neighbour
                             //Neighboursingle ng(trkA, trkB, timeA, timeB, paperIdxA, paperIdxB, goodnessChange);
 
-                            if(goodnessChange > -8.0) 
+                            if (goodnessChange > -8.0)
                             {
-                                Neighboursingle ng(trackA, trackB, timeA, timeB, paperA, paperB,goodnessChange);
+                                Neighboursingle ng(trackA, trackB, timeA, timeB, paperA, paperB, goodnessChange);
                                 neighbours.push_back(ng);
                             }
                             //cout<< trackA <<"|"<<timeA <<"|"<<trackB <<"|"<<timeB <<"|"<<endl;
@@ -733,43 +734,63 @@ void SessionOrganizer::gotoNeighbour_nc2(Neighboursingle ngh)
     conference->setPaper(ngh.getTrackB(), ngh.getTimeB(), ngh.getPaperIdxB(), paperA);
 }
 
+void SessionOrganizer::updateMaximum(double newMaxGoodness)
+{
+    // Update the bestConference to present conference
+    for (int i = 0; i < sessionsInTrack; i++)
+    {
+        for (int j = 0; j < parallelTracks; j++)
+        {
+            for (int k = 0; k < papersInSession; k++)
+            {
+                int paper = conference->getPaper(j, i, k);
+                bestConference->setPaper(j, i, k, paper);
+            }
+        }
+    }
+
+    // Update the maxGoodness value
+    maxGoodness = newMaxGoodness;
+}
+
 void SessionOrganizer::localSearch_nc2()
 {
     double min_Admissible_Val = 0.01;
-    int iter = 0;
+    int iter = 1;
     double score = scoreOrganization();
     cout << "score:" << score << endl;
 
     int start_time = time(NULL);
 
-    double max_prev_itr = 0;
+    // double max_prev_itr = 0;
     int prob_gen;
     bool close = false;
 
-    int max_ch= 25 ,cnt_ch=0,max_score=0;
+    int max_ch = 25, cnt_ch = 0, max_score = 0;
 
     double min_val_change = -8.0;
 
+    int hillCount = 1;
     //
     // The while loop needs to be made dependent on time.
     //
 
-    while (iter++ < 2000)
+    while (iter++)
     {
-        prob_gen = iter/100;
-        vector<Neighboursingle> neighbours = getNeighbours_nc2(close,prob_gen);
+        prob_gen = min(iter / 100, 50);
+        vector<Neighboursingle> neighbours = getNeighbours_nc2(close, prob_gen);
         int ngh_size = neighbours.size();
-        int arr[ngh_size +1];
+        int arr[ngh_size + 1];
 
-        for(int j=0; j< ngh_size; j++)
+        for (int j = 0; j < ngh_size; j++)
         {
             arr[j] = j;
         }
 
-        for (int i = ngh_size-1; i >= 0; --i)
+        for (int i = ngh_size - 1; i >= 0; --i)
         {
-            //generate a random number [0, n-1]
-            int j = rand() % (i+1);
+            //generate a random number [0, i]
+            int j = rand() % (i + 1);
 
             //swap the last element with element at random index
             int temp = arr[i];
@@ -784,7 +805,7 @@ void SessionOrganizer::localSearch_nc2()
         }
 
         int max_nh_idx = arr[0];
-        bool ab = true;
+        // bool ab = true;
 
         for (int nh = 0; nh < neighbours.size(); nh++)
         {
@@ -794,70 +815,68 @@ void SessionOrganizer::localSearch_nc2()
                 max_nh_idx = arr[nh];
                 gotoNeighbour_nc2(neighbours.at(max_nh_idx));
                 //neighbours.at(nh).printNeighbour();
-                ab = false;
+                // ab = false;
             }
 
-            if (neighbours.at(arr[nh]).getGoodInc() >= (neighbours.at(max_nh_idx).getGoodInc()) && ab)
-            {
-                max_nh_idx = nh;
-            }
+            // if (neighbours.at(arr[nh]).getGoodInc() >= (neighbours.at(max_nh_idx).getGoodInc()) && ab)
+            // {
+            //     max_nh_idx = nh;
+            // }
         }
 
-        max_prev_itr = neighbours.at(max_nh_idx).getGoodInc();
+        // max_prev_itr = neighbours.at(max_nh_idx).getGoodInc();
 
         if (neighbours.at(max_nh_idx).getGoodInc() <= min_Admissible_Val)
         {
-
-            if(close && cnt_ch < max_ch)
+            // if (close && cnt_ch < max_ch)
+            if (close)
             {
+                // Reached a hill
                 double score = scoreOrganization();
-                if(score > max_score)
+                if (score > maxGoodness)
                 {
-                    max_score = score;
-                    //
-                    // Need to save the configuration of our scheduler.
-                    //
+                    // Update the global schedule
+                    updateMaximum (score);
+                }
+                // cout << endl;
+                cout << "Hill: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
+                // cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
+                // cout << "Took " << iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
 
-                } 
-                cout<<endl;
-                cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
-                cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
-
+                // Make transitions to neighbours with changes greater than min_val_change
                 for (int nh = 1; nh < neighbours.size(); nh++)
                 {
-                    if ( neighbours.at(arr[nh]).getGoodInc() > min_val_change)
+                    if (neighbours.at(arr[nh]).getGoodInc() > min_val_change)
                     {
-                        max_nh_idx = arr[nh];                        
-                        gotoNeighbour_nc2(neighbours.at(max_nh_idx));                        
+                        max_nh_idx = arr[nh];
+                        gotoNeighbour_nc2(neighbours.at(max_nh_idx));
                     }
                 }
-                cnt_ch++;
+                // cnt_ch++;
             }
 
-            else if(close) break;
+            // else if (close)
+            // break;
         }
-        else
-        {
-            // goto neighbour
-            if (ab)
-            {
-                //Seems useless but am not changing it since code working fine!
+        // else
+        // {
+        //     // goto neighbour
+        //     if (ab)
+        //     {
+        //         //Seems useless but am not changing it since code working fine!
 
-                //neighbours.at(max_nh_idx).printNeighbour();
-                gotoNeighbour_nc2(neighbours.at(max_nh_idx));
-            }
-        }
-
-       
+        //         //neighbours.at(max_nh_idx).printNeighbour();
+        //         gotoNeighbour_nc2(neighbours.at(max_nh_idx));
+        //     }
+        // }
 
         // score = scoreOrganization();
         // min_Admissible_Val = max(min_Admissible_Val, score/5000 );
 
         // cout << "iter: " << iter << ", score:" << score << " , increment: " << neighbours.at(max_nh_idx).getGoodInc() << " " << neighbours.at(max_nh_idx).getType() << endl;
         // cout << "Took " <<  iter << " steps in time: " << (time(NULL) - start_time) << " secs" << endl;
-    
     }
     int end_time = time(NULL);
-    cout<< "Score: "<<max_score<<endl;
+    cout << "Score: " << max_score << endl;
     cout << "Took " << (iter - 1) << " steps in time: " << (end_time - start_time) << " secs" << endl;
 }
