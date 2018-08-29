@@ -798,7 +798,7 @@ void SessionOrganizer::localSearch_nc2()
                     // Update the global schedule
                     updateMaximum(score);
                 }
-                cout << "Hill: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
+                // cout << "Hill: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
 
                 // Make transitions to neighbours with changes greater than min_val_change
                 for (int nh = 1; nh < neighbours.size(); nh++)
@@ -817,7 +817,7 @@ void SessionOrganizer::localSearch_nc2()
         {
             // Update the global schedule
             updateMaximum(score);
-            cout << "Update: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
+            // cout << "Update: " << (hillCount++) << " | Iter: " << iter << " | score: " << score << " | max score: " << maxGoodness << " | total time: " << (time(NULL) - start_time) << endl;
         }
     }
 
